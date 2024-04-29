@@ -51,7 +51,6 @@ expressWs(wsapp);
 wsapp.ws('/api/room/:id', (ws, req) => {
 	let room = roomMap[req.params.id];
 	room.wsClient.push(ws);
-	console.log(`connection on ${req.ip}`);
 	ws.on("message", (message) => {
 		let data = JSON.parse(message);
 		room.handleMessage(data);

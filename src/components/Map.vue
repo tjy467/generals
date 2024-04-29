@@ -1,6 +1,7 @@
 <script setup>
-import {ref, reactive, onMounted, watch} from "vue";
+import { ref, reactive, onMounted } from "vue";
 import MapHandler from "./game/MapHandler.js";
+import { useRoute } from 'vue-router';
 import axios from "axios";
 const n = ref(0);
 const mapPos = reactive({X: 0, Y: 0});
@@ -132,7 +133,8 @@ const handleMessage = function(message){
 var ws;
 onMounted(() => {
 	document.addEventListener("keydown", keyDown);
-	let path = `ws://${window.location.host}/api/room/1000`;
+	let roomId = useRoute().params.id;
+	let path = `ws://${window.location.host}/api/room/${roomId}`;
 	ws = new WebSocket(path);
 	ws.onmessage = (message) => {
 		let data = JSON.parse(message.data);
@@ -198,19 +200,12 @@ const gameReset = function(){
 </template>
 
 <style scoped>
-@font-face {
-	font-family: 'Quicksand';
-	src: url('assets/font/Quicksand-VariableFont_wght.ttf');
-}
-*{
-	font-family: 'Quicksand', serif;
-}
 #background{
 	position:absolute;
-	top:0;
-	left:0;
-	width:100vw;
-	height:100vh;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
 	background-color: #222;
 	overflow: hidden;
 	z-index: -100;
@@ -219,11 +214,11 @@ const gameReset = function(){
 	position: absolute;
 }
 .map-row{
-	display:flex;
+	display: flex;
 }
 .map-item{
-	height:45px;
-	width:45px;
+	height: 45px;
+	width: 45px;
 	box-sizing: border-box;
 	border: 1px solid black;
 	caret-color: transparent;
@@ -253,21 +248,21 @@ const gameReset = function(){
 	background-color: gray;
 }
 .base{
-	background-image: url('assets/image/crown.png');
+	background-image: url('/assets/image/crown.png');
 }
 .obstacle{
-	background-image: url('assets/image/obstacle.png');
+	background-image: url('/assets/image/obstacle.png');
 }
 .mountain{
-	background-image: url('assets/image/mountain.png');
+	background-image: url('/assets/image/mountain.png');
 	background-color: #bbb;
 }
 .city{
-	background-image: url('assets/image/city.png');
+	background-image: url('/assets/image/city.png');
 	background-color: gray;
 }
 .swamp{
-	background-image: url('assets/image/swamp.png');
+	background-image: url('/assets/image/swamp.png');
 	background-color: gray;
 }
 .belong1{
