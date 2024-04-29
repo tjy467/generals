@@ -1,9 +1,33 @@
 import MapHandler from './src/components/game/MapHandler.js';
 import fs from 'fs';
+import WebSocket from 'ws';
 class Room{
 	constructor(){
 		this.wsClient = [];
 		this.mapHandler = new MapHandler;
+		this.checkAliveTimer = setInterval(function(){
+			this.checkAlive();
+		}.bind(this), 10000);
+	}
+	startGame(){
+		this.tick = setInterval(() => {
+			this.mapHandler.tick();
+			this.wsClient.forEach(ws => {
+				ws.send('{"type": "tick"}');
+			});
+		}, 250);
+	}
+	checkAlive(){
+		for(let i = 0; i < this.wsClient.length; i++){
+			let ws = this.wsClient[i];
+			if(ws.readyState == WebSocket.CLOSING || ws.readyState == WebSocket.CLOSED){
+				this.wsClient.splice(i, 1);
+			}
+		}
+		if(this.wsClient.length == 0){
+			clearInterval(this.checkAliveTimer);
+			this.closeCallback();
+		}
 	}
 	handleMessage(message){
 		if(message.type == "options"){
@@ -21,26 +45,14 @@ class Room{
 			clearInterval(this.tick);
 		}
 	}
-	startGame(){
-		this.tick = setInterval(() => {
-			this.mapHandler.tick();
-			this.wsClient.forEach(ws => {
-				ws.send('{"type": "tick"}');
-			});
-		}, 250);
-	}
 }
-const roomMap = new Map();
-const createRoom = function(){
-	let id = 0;
-	do{
-		// id = Math.floor(Math.random()*32768);
-		id = 1000;
-	}while(roomMap[id] != undefined);
+const roomMap = new Map;
+const createRoom = function(id){
+	console.log(`Room ${id} created.`);
 	roomMap[id] = new Room;
-	return id;
 };
 const closeRoom = function(id){
+	console.log(`Room ${id} closed.`);
 	delete roomMap[id];
 };
 
@@ -49,7 +61,14 @@ import expressWs from 'express-ws';
 const wsapp = express();
 expressWs(wsapp);
 wsapp.ws('/api/room/:id', (ws, req) => {
-	let room = roomMap[req.params.id];
+	let id = req.params.id;
+	if(roomMap[id] == undefined){
+		createRoom(id);
+	}
+	let room = roomMap[id];
+	room.closeCallback = () => {
+		closeRoom(id);
+	};
 	room.wsClient.push(ws);
 	ws.on("message", (message) => {
 		let data = JSON.parse(message);
@@ -59,6 +78,7 @@ wsapp.ws('/api/room/:id', (ws, req) => {
 		});
 	});
 	ws.on("close", () => {
+		room.checkAlive();
 	});
 });
 export {
@@ -66,6 +86,3 @@ export {
 	createRoom,
 	closeRoom
 };
-
-let id = createRoom();
-console.log(id);
